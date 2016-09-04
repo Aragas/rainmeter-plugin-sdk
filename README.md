@@ -10,10 +10,13 @@ This system isn't one of the most beautiful things I created, but it will work.
   
   
 The architecture isn't really that bad. As a developer, you should know only couple of things.  
+* Any external library(.dll) that is used by Plugin will be loaded from MY_DOCUMENTS%\Rainmeter\Skins\%SKIN%
 * Each **PluginSkin** is unique for each **Rainmeter Skin**. This means, most of your Plugin logic should be located there.  
 * **PluginMeasure** is created only once for every **Rainmeter Measure** in your **Rainmeter Skin**. In theory, it should contain only return XXX logic as seen in examples.  
 * Even if you don't really need a **PluginSkin**, it should be created.
 * **Naming** is important. Your **PluginSkin** and **PluginMeasure** should share same names and should end with "...Skin" and "...Measure" (ExampleSkin and ExampleMeasure). **Enum** naming is not important.  
+* 
+As you can see, you need to set Plugin=RainManager.dll. Put your actual plugin library in MY_DOCUMENTS%\Rainmeter\Skins\%SKIN% as MyPlugin_x86.dll and MyPlugin_x64.dll and set in your **Rainmeter Measure** PluginAssemblyName=MyPlugin. See examples
    
    
 The **Rainmeter Meter** syntax changed a bit. Now you need some extra field: 
