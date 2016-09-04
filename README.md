@@ -11,12 +11,12 @@ This system isn't one of the most beautiful things I created, but it will work.
   
 The architecture isn't really that bad. As a developer, you should know only couple of things.  
 * Each **PluginSkin** is unique for each **Rainmeter Skin**. This means, most of your Plugin logic should be located there.  
-* **PluginMeasure** is created only once for every **Rainmeter Measure** in your **Rainmeter Skin**. In theory, it should countain only return XXX logic as seen in examples.  
+* **PluginMeasure** is created only once for every **Rainmeter Measure** in your **Rainmeter Skin**. In theory, it should contain only return XXX logic as seen in examples.  
 * Even if you don't really need a **PluginSkin**, it should be created.
 * **Naming** is important. Your **PluginSkin** and **PluginMeasure** should share same names and should end with "...Skin" and "...Measure" (ExampleSkin and ExampleMeasure). **Enum** naming is not important.  
    
    
-The **Rainmeter Meter** syntaxis changed a bit. Now you need some extra field: 
+The **Rainmeter Meter** syntax changed a bit. Now you need some extra field: 
 * **PluginAssemblyName** your Plugin assembly name (.dll)
 * **PluginMeasureName** your **PluginSkin**/**PluginMeasure** name.
 * **PluginMeasureType** enum field name that will be used by **Rainmeter Meter**.
