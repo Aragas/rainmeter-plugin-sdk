@@ -16,10 +16,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+using RainManager;
 using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Rainmeter;
 
 // Overview: This example demonstrates a basic implementation of a parent/child
 // measure structure. In this particular example, we have a "parent" measure
@@ -39,23 +37,29 @@ using Rainmeter;
 
     [mParent]
     Measure=Plugin
-    Plugin=ParentChild.dll
+    Plugin=RainManager.dll
+	PluginAssemblyName=ParentChild
+    PluginMeasureName=Parent
+    PluginMeasureType=A
     ValueA=111
     ValueB=222
     ValueC=333
-    Type=A
 
     [mChild1]
     Measure=Plugin
-    Plugin=ParentChild.dll
+    Plugin=RainManager.dll
+	PluginAssemblyName=ParentChild
+    PluginMeasureName=Child
+    PluginMeasureType=B
     ParentName=mParent
-    Type=B
 
     [mChild2]
     Measure=Plugin
-    Plugin=ParentChild.dll
+    Plugin=RainManager.dll
+	PluginAssemblyName=ParentChild
+    PluginMeasureName=Child
+    PluginMeasureType=C
     ParentName=mParent
-    Type=C
 
     [Text]
     Meter=STRING
@@ -72,100 +76,123 @@ using Rainmeter;
 
 namespace PluginParentChild
 {
-    internal class Measure
+    public class BaseSkin : PluginSkin
     {
-        internal enum MeasureType
-        {
-            A,
-            B,
-            C
-        }
-
-        internal MeasureType Type = MeasureType.A;
-
-        internal virtual void Dispose()
+        public BaseSkin(RainmeterSkinHandler skinHandler, RainmeterAPI api) : base(skinHandler, api)
         {
         }
 
-        internal virtual void Reload(Rainmeter.API api, ref double maxValue)
+        public override void Dispose()
         {
-            string type = api.ReadString("Type", "");
-            switch (type.ToLowerInvariant())
-            {
-                case "a":
-                    Type = MeasureType.A;
-                    break;
-
-                case "b":
-                    Type = MeasureType.B;
-                    break;
-
-                case "c":
-                    Type = MeasureType.C;
-                    break;
-
-                default:
-                    API.Log(API.LogType.Error, "ParentChild.dll: Type=" + type + " not valid");
-                    break;
-            }
+        }
+    }
+    public class ParentSkin : BaseSkin
+    {
+        public ParentSkin(RainmeterSkinHandler skinHandler, RainmeterAPI api) : base(skinHandler, api)
+        {
         }
 
-        internal virtual double Update()
+        public override void Dispose()
         {
-            return 0.0;
+            base.Dispose();
+        }
+    }
+    public class ChildSkin : BaseSkin
+    {
+        public ChildSkin(RainmeterSkinHandler skinHandler, RainmeterAPI api) : base(skinHandler, api)
+        {
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
         }
     }
 
-    internal class ParentMeasure : Measure
+    public enum BaseMeasureEnum
     {
-        // This list of all parent measures is used by the child measures to find their parent.
-        internal static List<ParentMeasure> ParentMeasures = new List<ParentMeasure>();
-
-        internal string Name;
-        internal IntPtr Skin;
-
-        internal int ValueA;
-        internal int ValueB;
-        internal int ValueC;
-
-        internal ParentMeasure()
+        A,
+        B,
+        C
+    }
+    public class BaseMeasure<TOverrideSkin> : PluginMeasure<TOverrideSkin, BaseMeasureEnum> where TOverrideSkin : BaseSkin
+    {
+        public BaseMeasure(string pluginType, TOverrideSkin skin, RainmeterAPI api) : base(pluginType, skin, api)
         {
-            ParentMeasures.Add(this);
         }
 
-        internal override void Dispose()
+        public override void Reload(RainmeterAPI api, ref double maxValue)
         {
-            ParentMeasures.Remove(this);
         }
 
-        internal override void Reload(Rainmeter.API api, ref double maxValue)
+        public override double GetNumeric()
+        {
+            return 0.0;
+        }
+
+        public override string GetString()
+        {
+            return null;
+        }
+
+        public override void ExecuteBang(string args)
+        {
+        }
+
+        public override void Dispose()
+        {
+        }
+    }
+
+    public class ParentMeasure : BaseMeasure<ParentSkin>
+    {
+        public int ValueA;
+        public int ValueB;
+        public int ValueC;
+
+        public ParentMeasure(string pluginType, ParentSkin skin, RainmeterAPI api) : base(pluginType, skin, api)
+        {
+        }
+
+        public override void Reload(RainmeterAPI api, ref double maxValue)
         {
             base.Reload(api, ref maxValue);
-
-            Name = api.GetMeasureName();
-            Skin = api.GetSkin();
 
             ValueA = api.ReadInt("ValueA", 0);
             ValueB = api.ReadInt("ValueB", 0);
             ValueC = api.ReadInt("ValueC", 0);
         }
 
-        internal override double Update()
+        public override double GetNumeric()
         {
-            return GetValue(Type);
+            return GetValue(TypeEnum);
         }
 
-        internal double GetValue(MeasureType type)
+        public override string GetString()
+        {
+            return null;
+        }
+
+        public override void ExecuteBang(string args)
+        {
+        }
+
+        public override void Dispose()
+        {
+        }
+
+
+        public double GetValue(BaseMeasureEnum type)
         {
             switch (type)
             {
-                case MeasureType.A:
+                case BaseMeasureEnum.A:
                     return ValueA;
 
-                case MeasureType.B:
+                case BaseMeasureEnum.B:
                     return ValueB;
 
-                case MeasureType.C:
+                case BaseMeasureEnum.C:
                     return ValueC;
             }
 
@@ -173,85 +200,65 @@ namespace PluginParentChild
         }
     }
 
-    internal class ChildMeasure : Measure
+    public class ChildMeasure : BaseMeasure<ChildSkin>
     {
         private ParentMeasure ParentMeasure = null;
 
-        internal override void Reload(Rainmeter.API api, ref double maxValue)
+        public ChildMeasure(string pluginType, ChildSkin skin, RainmeterAPI api) : base(pluginType, skin, api)
+        {
+        }
+
+        public override void Reload(RainmeterAPI api, ref double maxValue)
         {
             base.Reload(api, ref maxValue);
 
             string parentName = api.ReadString("ParentName", "");
-            IntPtr skin = api.GetSkin();
+            IntPtr skinPtr = api.GetSkin();
 
-            // Find parent using name AND the skin handle to be sure that it's the right one.
+
             ParentMeasure = null;
-            foreach (ParentMeasure parentMeasure in ParentMeasure.ParentMeasures)
+            foreach (PluginSkin skin in Skin.SkinHandler.PluginSkins)
             {
-                if (parentMeasure.Skin.Equals(skin) && parentMeasure.Name.Equals(parentName))
+                if (skin.Ptr == Skin.Ptr)
                 {
-                    ParentMeasure = parentMeasure;
+                    foreach (PluginMeasure measure in skin.PluginMeasures)
+                    {
+                        ParentMeasure pMeasure = measure as ParentMeasure;
+                        if (pMeasure != null && pMeasure.Name == parentName)
+                        {
+                            ParentMeasure = pMeasure;
+                        }
+                    }
                 }
             }
-
+           
             if (ParentMeasure == null)
             {
-                API.Log(API.LogType.Error, "ParentChild.dll: ParentName=" + parentName + " not valid");
+                RainmeterAPI.Log(RainmeterAPI.LogType.Error, "ParentChild.dll: ParentName=" + parentName + " not valid");
             }
         }
 
-        internal override double Update()
+        public override double GetNumeric()
         {
             if (ParentMeasure != null)
             {
-                return ParentMeasure.GetValue(Type);
+                return ParentMeasure.GetValue(TypeEnum);
             }
 
             return 0.0;
         }
-    }
 
-    public static class Plugin
-    {
-        [DllExport]
-        public static void Initialize(ref IntPtr data, IntPtr rm)
+        public override string GetString()
         {
-            Rainmeter.API api = new Rainmeter.API(rm);
-
-            string parent = api.ReadString("ParentName", "");
-            Measure measure;
-            if (String.IsNullOrEmpty(parent))
-            {
-                measure = new ParentMeasure();
-            }
-            else
-            {
-                measure = new ChildMeasure();
-            }
-
-            data = GCHandle.ToIntPtr(GCHandle.Alloc(measure));
+            return null;
         }
 
-        [DllExport]
-        public static void Finalize(IntPtr data)
+        public override void ExecuteBang(string args)
         {
-            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            measure.Dispose();
-            GCHandle.FromIntPtr(data).Free();
         }
 
-        [DllExport]
-        public static void Reload(IntPtr data, IntPtr rm, ref double maxValue)
+        public override void Dispose()
         {
-            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            measure.Reload(new Rainmeter.API(rm), ref maxValue);
-        }
-
-        [DllExport]
-        public static double Update(IntPtr data)
-        {
-            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            return measure.Update();
         }
     }
 }

@@ -16,10 +16,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+using RainManager;
 using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Rainmeter;
 
 // Overview: This example demonstrates the basic concept of Rainmeter C# plugins.
 
@@ -32,23 +30,31 @@ using Rainmeter;
 
     [mString]
     Measure=Plugin
-    Plugin=SystemVersion.dll
-    Type=String
+    Plugin=RainManager.dll
+	PluginAssemblyName=SystemVersion
+    PluginMeasureName=SystemVersion
+    PluginMeasureType=String
 
     [mMajor]
     Measure=Plugin
-    Plugin=SystemVersion.dll
-    Type=Major
+    Plugin=RainManager.dll
+	PluginAssemblyName=SystemVersion
+    PluginMeasureName=SystemVersion
+    PluginMeasureType=Major
 
     [mMinor]
     Measure=Plugin
-    Plugin=SystemVersion.dll
-    Type=Minor
+    Plugin=RainManager.dll
+	PluginAssemblyName=SystemVersion
+    PluginMeasureName=SystemVersion
+    PluginMeasureType=Minor
 
     [mNumber]
     Measure=Plugin
-    Plugin=SystemVersion.dll
-    Type=Number
+    Plugin=RainManager.dll
+	PluginAssemblyName=SystemVersion
+    PluginMeasureName=SystemVersion
+    PluginMeasureType=Number
 
     [Text1]
     Meter=STRING
@@ -80,61 +86,46 @@ using Rainmeter;
 
 namespace PluginSystemVersion
 {
-    internal class Measure
+    public class SystemVersionSkin : PluginSkin
     {
-        enum MeasureType
-        {
-            Major,
-            Minor,
-            Number,
-            String
-        }
-
-        private MeasureType Type = MeasureType.Major;
-
-        internal Measure()
+        public SystemVersionSkin(RainmeterSkinHandler skinHandler, RainmeterAPI api) : base(skinHandler, api)
         {
         }
 
-        internal void Reload(Rainmeter.API rm, ref double maxValue)
+        public override void Dispose()
         {
-            string type = rm.ReadString("Type", "");
-            switch (type.ToLowerInvariant())
+        }
+    }
+
+    public enum SystemVersionMeasureEnum
+    {
+        Major,
+        Minor,
+        Number,
+        String
+    }
+    public class SystemVersionMeasure : PluginMeasure<SystemVersionSkin, SystemVersionMeasureEnum>
+    {
+        public SystemVersionMeasure(string pluginType, SystemVersionSkin skin, RainmeterAPI api) : base(pluginType, skin, api)
+        {
+        }
+
+        public override void Reload(RainmeterAPI rm, ref double maxValue)
+        {
+        }
+
+        public override double GetNumeric()
+        {
+            switch (TypeEnum)
             {
-                case "major":
-                    Type = MeasureType.Major;
-                    break;
+                case SystemVersionMeasureEnum.Major:
+                    return (double) Environment.OSVersion.Version.Major;
 
-                case "minor":
-                    Type = MeasureType.Minor;
-                    break;
+                case SystemVersionMeasureEnum.Minor:
+                    return (double) Environment.OSVersion.Version.Minor;
 
-                case "number":
-                    Type = MeasureType.Number;
-                    break;
-
-                case "string":
-                    Type = MeasureType.String;
-                    break;
-
-                default:
-                    API.Log(API.LogType.Error, "SystemVersion.dll: Type=" + type + " not valid");
-                    break;
-            }
-        }
-
-        internal double Update()
-        {
-            switch (Type)
-            {
-                case MeasureType.Major:
-                    return (double)Environment.OSVersion.Version.Major;
-
-                case MeasureType.Minor:
-                    return (double)Environment.OSVersion.Version.Minor;
-
-                case MeasureType.Number:
-                    return (double)Environment.OSVersion.Version.Major + ((double)Environment.OSVersion.Version.Minor / 10.0);
+                case SystemVersionMeasureEnum.Number:
+                    return (double) Environment.OSVersion.Version.Major + ((double) Environment.OSVersion.Version.Minor / 10.0);
             }
 
             // MeasureType.MajorMinor is not a number and and therefore will be
@@ -143,11 +134,11 @@ namespace PluginSystemVersion
             return 0.0;
         }
 
-        internal string GetString()
+        public override string GetString()
         {
-            switch (Type)
+            switch (TypeEnum)
             {
-                case MeasureType.String:
+                case SystemVersionMeasureEnum.String:
                     return string.Format("{0}.{1} (Build {2})", Environment.OSVersion.Version.Major, Environment.OSVersion.Version.Minor, Environment.OSVersion.Version.Build);
             }
 
@@ -157,61 +148,13 @@ namespace PluginSystemVersion
 
             return null;
         }
-    }
 
-    public static class Plugin
-    {
-        static IntPtr StringBuffer = IntPtr.Zero;
-
-        [DllExport]
-        public static void Initialize(ref IntPtr data, IntPtr rm)
+        public override void ExecuteBang(string args)
         {
-            data = GCHandle.ToIntPtr(GCHandle.Alloc(new Measure()));
         }
 
-        [DllExport]
-        public static void Finalize(IntPtr data)
+        public override void Dispose()
         {
-            GCHandle.FromIntPtr(data).Free();
-
-            if (StringBuffer != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(StringBuffer);
-                StringBuffer = IntPtr.Zero;
-            }
-        }
-
-        [DllExport]
-        public static void Reload(IntPtr data, IntPtr rm, ref double maxValue)
-        {
-            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            measure.Reload(new Rainmeter.API(rm), ref maxValue);
-        }
-
-        [DllExport]
-        public static double Update(IntPtr data)
-        {
-            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            return measure.Update();
-        }
-
-        [DllExport]
-        public static IntPtr GetString(IntPtr data)
-        {
-            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            if (StringBuffer != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(StringBuffer);
-                StringBuffer = IntPtr.Zero;
-            }
-
-            string stringValue = measure.GetString();
-            if (stringValue != null)
-            {
-                StringBuffer = Marshal.StringToHGlobalUni(stringValue);
-            }
-
-            return StringBuffer;
         }
     }
 }
